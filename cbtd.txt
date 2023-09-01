@@ -18,6 +18,8 @@ class CBTD: # Conection betwen tow device
         return self.functions[name_function]['function'](**kawrgs)
     def sol_task(self,name_function,kawrgs):
         return self.functions[name_function]['function'](**kawrgs)
+    async def sol_task_async(self,name_function,kawrgs):
+        return  await self.functions[name_function]['function'](**kawrgs)
     def create_url(self):
         self.url = ngrok.connect(self.port)
     def clean_url(self):
@@ -34,7 +36,10 @@ class CBTD: # Conection betwen tow device
         @self.app.route('/', methods=['POST'])
         def receive_data():
             data = request.get_json()
-            target = self.sol_task(**data)
+            if data['name_function'][0:5]!='async':
+                target = self.sol_task(**data)
+            else :
+                target = await self.sol_task_async(**data)
             response = {"message": target}
             return jsonify(response), 200
     def run_app(self):
