@@ -1,0 +1,52 @@
+from pyngrok import ngrok
+from flask import Flask, request, jsonify
+import requests
+class CBTD: # Conection betwen tow device
+    def __init__(self):
+        self.port = 5051
+        self.functions = {}
+        pass
+    def add(self,function,name_function,kawrgs,describe):
+        self.functions[name_function] = {'function' : function}
+        self.functions[name_function]['kawrgs'] = kawrgs
+        self.functions[name_function]['describe'] = describe
+    def get_kwargs(self,name_function):
+        return self.functions[name_function]['kawrgs']
+    def get_describe(self,name_function):
+        return self.functions[name_function]['describe']
+    def __call__(self,name_function,kawrgs):
+        return self.functions[name_function]['function'](**kawrgs)
+    def sol_task(self,name_function,kawrgs):
+        return self.functions[name_function]['function'](**kawrgs)
+    def create_url(self):
+        self.url = ngrok.connect(self.port)
+    def clean_url(self):
+        url_to_del = [self.get_url(str(_)) for _ in ngrok.get_tunnels() ]
+        [ngrok.disconnect(_) for _ in url_to_del ]
+    def get_url(self,url=None):
+        if url==None:
+            url = self.url
+        url = str(url).replace('NgrokTunnel: ','').replace(f' -> "http://localhost:{self.port}"','').replace('"','')
+        return url
+    
+    def create_app(self):
+        self.app = Flask(__name__)
+        @self.app.route('/', methods=['POST'])
+        def receive_data():
+            data = request.get_json()
+            target = self.sol_task(**data)
+            response = {"message": target}
+            return jsonify(response), 200
+    def run_app(self):
+        self.app.run(debug=False, port=self.port)    
+    def set_url(self,url):
+        self.pup_url = url
+    def set_args(self,args):
+        self.args = args
+    def cheak_response(self,response):
+        if response.status_code == 200:return True
+        else : return False
+    def get_response(self):
+        response = requests.post(self.pup_url, json=self.args)
+        if self.cheak_response(response):
+            return response
